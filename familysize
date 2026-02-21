@@ -1,0 +1,52 @@
+train.head()
+train.info()
+train.describe()
+
+#仮説
+#１．PClassが良ければ生存率は上がる 
+#２．料金が高いほど生存率は上がる 
+#３．両親もしくは子どもがいた場合の生存率はかなり低い 
+#４．兄弟や従兄弟がいた場合の生存率は比較的高い 
+#５．若い方が生存率は高い
+
+#一つずつ仮説検証
+#クラスと生存率
+import seaborn as sns
+sns.barplot(x="Pclass", y="Survived", data=train)
+
+#料金と生存率
+import numpy as np
+train["Fare_log"] = np.log1p(train["Fare"])
+sns.boxplot(x="Survived", y="Fare_log", data=train)
+
+#家族数と生存率
+train["FamilySize"] = train["SibSp"] + train["Parch"] + 1
+sns.barplot(x="FamilySize", y="Survived", data=train)
+
+#年齢と生存率の関係性
+sns.histplot(data=train, x="Age", hue="Survived", bins=30, kde=True)
+
+#家族構成と生存率の関係性については再検証が必要
+#家族構成は「合算」してみる
+train["FamilySize"] = train["SibSp"] + train["Parch"] + 1
+sns.barplot(x="FamilySize", y="Survived", data=train)
+
+'''
+意外なことに4人家族が一番生存率が高かったのですが、一番驚いたことは1人よりも7人家族の方が生存率は高かったのです。
+これは家族で助け合いができたからなのかとも思いますが、これでは5~6人家族が極端に生存率が低いことの説明ができません。
+'''
+#ただ、ここでサンプル数が違うことに注意
+train["FamilySize"].value_counts().sort_index()
+
+#カテゴリ化する
+def family_group(size):
+    if size == 1:
+        return "Solo"
+    elif size <= 4:
+        return "Small"
+    else:
+        return "Large"
+
+train["FamilyGroup"] = train["FamilySize"].apply(family_group)
+sns.barplot(x="FamilyGroup", y="Survived", data=train)
+
